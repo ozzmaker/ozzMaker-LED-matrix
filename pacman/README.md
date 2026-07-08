@@ -6,4 +6,6 @@ https://ozzmaker.com/build-a-scrolling-pac-man-on-a-8-panel-ozzmaker-led-strip/
 
 
 
-![pacman on OzzMaker 16x16 RGB LED matrix ]( https://ozzmaker.com/wp-content/uploads/2026/07/pacman.gif  "Pacman")
+
+<img width="640" height="360" alt="pacman" src="https://github.com/user-attachments/assets/d1cf94b3-bc91-4eea-8c5d-487c406ef2b8" />
+
