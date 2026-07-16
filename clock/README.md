@@ -6,7 +6,9 @@ A digital clock for **four OzzMaker 16×16 RGB LED panels** chained into one
 The lit background **cycles through a pastel palette** with an animated transition,
 and a small **web control panel** lets you tune everything live.
 
-![preview: dark digits on a soft blue field]()
+
+![OzzMaker 16x16 RGB LED matrix ]( https://ozzmaker.com/wp-content/uploads/2026/07/clockFeature2.jpg "OzzMaker 16x16 RGB LED matrix")
+
 
 ## What it does
 
