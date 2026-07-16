@@ -1,0 +1,17 @@
+[Unit]
+Description=Negative-style LED matrix clock with web control
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Adjust WorkingDirectory/ExecStart if your checkout is not at /home/pi/clock.
+WorkingDirectory=/home/pi/clock
+ExecStart=/usr/bin/python3 /home/pi/clock/clock.py
+Restart=always
+RestartSec=3
+# GPIO access requires root.
+User=root
+
+[Install]
+WantedBy=multi-user.target

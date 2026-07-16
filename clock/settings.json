@@ -1,0 +1,27 @@
+{
+  "brightness": 63,
+  "display_on": true,
+  "time_format": "24h",
+  "leading_zero": true,
+  "colon_blink": true,
+  "seconds_bar": false,
+  "white_segments": true,
+  "background_mode": "plasma",
+  "breathing": false,
+  "sparkle": false,
+  "tod_tint": false,
+  "palette": [
+    "#071bb0",
+    "#d20f77",
+    "#eff312",
+    "#56d600",
+    "#00f5e4",
+    "#2c0977",
+    "#b90909"
+  ],
+  "color_order": "sequential",
+  "change_rate": "minute",
+  "fast": true,
+  "transition": "fade",
+  "transition_duration": 1.2
+}

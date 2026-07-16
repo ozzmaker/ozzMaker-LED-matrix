@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LED clock control</title>
+<style>
+  :root { --bg:#11151c; --card:#1b212b; --line:#2c3540; --text:#e7edf3; --muted:#9aa7b4; --accent:#6ca8e0; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui, sans-serif; }
+  .wrap { max-width:680px; margin:0 auto; padding:18px; }
+  h1 { font-size:20px; font-weight:600; margin:0 0 14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+  .card h2 { font-size:14px; font-weight:600; margin:0 0 12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .row:last-child { margin-bottom:0; }
+  label { font-size:14px; }
+  .grow { flex:1; }
+  .val { min-width:46px; text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
+  input[type=range] { flex:1; accent-color:var(--accent); }
+  input[type=checkbox] { width:18px; height:18px; accent-color:var(--accent); }
+  input[type=color] { width:40px; height:30px; border:none; background:none; padding:0; cursor:pointer; }
+  select { background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font:inherit; }
+  button { background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px 12px; font:inherit; cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  button.icon { padding:6px 9px; }
+  .preview-shell { background:#000; border-radius:8px; padding:8px; }
+  canvas { width:100%; height:auto; image-rendering:pixelated; display:block; border-radius:4px; }
+  .status { display:flex; justify-content:space-between; margin-top:10px; font-size:13px; color:var(--muted); }
+  .swatch-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .swatch-row .hex { font-size:13px; color:var(--muted); width:74px; }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; }
+  .seg { display:flex; gap:14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>LED clock control</h1>
+
+  <div class="card">
+    <h2>Live preview</h2>
+    <div class="preview-shell"><canvas id="preview" width="64" height="16"></canvas></div>
+    <div class="status">
+      <span id="st-left">&nbsp;</span>
+      <span id="st-right">&nbsp;</span>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>Display</h2>
+      <div class="row">
+        <label class="grow" for="brightness">Brightness</label>
+        <input type="range" id="brightness" min="0" max="100" step="1">
+        <span class="val" id="brightness-val">—</span>
+      </div>
+      <div class="row">
+        <input type="checkbox" id="display_on">
+        <label for="display_on">Display on</label>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <label class="grow" for="background_mode">Background</label>
+        <select id="background_mode">
+          <option value="color">Solid color</option>
+          <option value="plasma">Plasma</option>
+          <option value="plasma_fade">Plasma (cycling, fades)</option>
+          <option value="aurora">Aurora</option>
+          <option value="metaballs">Lava lamp</option>
+          <option value="clouds">Clouds</option>
+          <option value="twinkle">Twinkle</option>
+          <option value="ripples">Ripples</option>
+          <option value="spiral">Spiral</option>
+          <option value="scanner">Scanner</option>
+        </select>
+      </div>
+      <div class="row" style="margin-top:8px; flex-wrap:wrap; gap:8px 14px;">
+        <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" id="breathing"> Breathing</label>
+        <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" id="sparkle"> Minute sparkle</label>
+        <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" id="tod_tint"> Time-of-day tint</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Time</h2>
+      <div class="row seg">
+        <label><input type="radio" name="time_format" value="24h"> 24-hour</label>
+        <label><input type="radio" name="time_format" value="12h"> 12-hour</label>
+      </div>
+      <div class="row">
+        <input type="checkbox" id="leading_zero">
+        <label for="leading_zero">Leading zero on hour</label>
+      </div>
+      <div class="row">
+        <input type="checkbox" id="colon_blink">
+        <label for="colon_blink">Colon blinks once/second</label>
+      </div>
+      <div class="row">
+        <input type="checkbox" id="seconds_bar">
+        <label for="seconds_bar">Seconds bar (bottom edge)</label>
+      </div>
+      <div class="row">
+        <input type="checkbox" id="white_segments">
+        <label for="white_segments">White segments (lit)</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Transition</h2>
+      <div class="row">
+        <select id="transition" class="grow">
+          <option value="fade">Fade</option>
+          <option value="instant">Instant</option>
+          <option value="swipe_diagonal">Diagonal swipe (left → right)</option>
+          <option value="wipe_vertical">Vertical wipe (top → bottom)</option>
+          <option value="random">Random each change</option>
+        </select>
+      </div>
+      <div class="row">
+        <label class="grow" for="transition_duration">Duration</label>
+        <input type="range" id="transition_duration" min="0" max="5" step="0.1">
+        <span class="val" id="transition_duration-val">—</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Color change</h2>
+      <div class="row seg">
+        <label><input type="radio" name="change_rate" value="minute"> Every minute</label>
+        <label><input type="radio" name="change_rate" value="hour"> Every hour</label>
+      </div>
+      <div class="row">
+        <label class="grow" for="color_order">Order</label>
+        <select id="color_order">
+          <option value="sequential">Sequential</option>
+          <option value="random">Random</option>
+        </select>
+      </div>
+      <div class="row">
+        <input type="checkbox" id="fast">
+        <label for="fast">Fast cycle (every few seconds)</label>
+      </div>
+      <div class="actions" style="margin-top:6px;">
+        <button id="next-color">Advance to next color</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Color palette</h2>
+    <div id="palette"></div>
+    <div class="actions" style="margin-top:6px;">
+      <button id="add-color">+ Add color</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Settings</h2>
+    <div class="actions">
+      <button id="reset">Reset to defaults</button>
+      <span id="save-note" style="color:var(--muted); font-size:13px; align-self:center;"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+// Mirrors settings_store.DEFAULTS so the panel shows sensible values immediately,
+// even before (or without) a backend — e.g. when opened as a static file preview.
+const DEFAULTS = {
+  brightness: 60, display_on: true, time_format: "24h", leading_zero: true,
+  colon_blink: true, seconds_bar: true, white_segments: false, background_mode: "color",
+  breathing: false, sparkle: false, tod_tint: false,
+  palette: ["#6ca8e0", "#9fe3c5", "#c2b4f0", "#f6c7a8", "#f4b8c8", "#f3e4a3", "#a8e0e6", "#a9c0ff"],
+  color_order: "sequential", change_rate: "hour", fast: false, transition: "fade", transition_duration: 1.2,
+};
+let settings = DEFAULTS;
+let suppress = false;          // avoid echoing server-driven UI updates back as patches
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  return r.json();
+}
+
+async function patch(obj) {
+  if (suppress) return;
+  try {
+    const res = await api('/api/settings', {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(obj)
+    });
+    settings = res.settings;
+    note(res.ok ? 'Saved' : ('Error: ' + (res.errors || []).join('; ')));
+  } catch (e) {
+    note('Offline preview — changes not saved');
+  }
+}
+
+// Palette edits change the list structure, so re-render it from the saved result.
+async function commitPalette(newPalette) {
+  await patch({palette: newPalette});
+  renderPalette(settings.palette);
+}
+
+let noteTimer = null;
+function note(msg) {
+  $('save-note').textContent = msg;
+  clearTimeout(noteTimer);
+  noteTimer = setTimeout(() => { $('save-note').textContent = ''; }, 1500);
+}
+
+function applyToUI(s) {
+  suppress = true;
+  $('brightness').value = s.brightness;
+  $('brightness-val').textContent = s.brightness + '%';
+  $('display_on').checked = s.display_on;
+  document.querySelector(`input[name=time_format][value="${s.time_format}"]`).checked = true;
+  $('leading_zero').checked = s.leading_zero;
+  $('colon_blink').checked = s.colon_blink;
+  $('seconds_bar').checked = s.seconds_bar;
+  $('white_segments').checked = s.white_segments;
+  $('transition').value = s.transition;
+  $('transition_duration').value = s.transition_duration;
+  $('transition_duration-val').textContent = Number(s.transition_duration).toFixed(1) + 's';
+  document.querySelector(`input[name=change_rate][value="${s.change_rate}"]`).checked = true;
+  $('color_order').value = s.color_order;
+  $('fast').checked = s.fast;
+  $('background_mode').value = s.background_mode;
+  $('breathing').checked = s.breathing;
+  $('sparkle').checked = s.sparkle;
+  $('tod_tint').checked = s.tod_tint;
+  renderPalette(s.palette);
+  suppress = false;
+}
+
+function renderPalette(palette) {
+  const box = $('palette');
+  box.innerHTML = '';
+  palette.forEach((hex, i) => {
+    const row = document.createElement('div');
+    row.className = 'swatch-row';
+    row.innerHTML = `
+      <input type="color" value="${hex}">
+      <span class="hex">${hex}</span>
+      <span class="grow"></span>
+      <button class="icon" data-act="up" title="Move up">↑</button>
+      <button class="icon" data-act="down" title="Move down">↓</button>
+      <button class="icon" data-act="del" title="Remove">✕</button>`;
+    const picker = row.querySelector('input[type=color]');
+    picker.addEventListener('input', () => { row.querySelector('.hex').textContent = picker.value; });
+    picker.addEventListener('change', () => {
+      const p = settings.palette.slice(); p[i] = picker.value; commitPalette(p);
+    });
+    row.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      const act = b.dataset.act;
+      let p = settings.palette.slice();
+      if (act === 'del') { if (p.length > 1) p.splice(i, 1); }
+      else if (act === 'up' && i > 0) { [p[i-1], p[i]] = [p[i], p[i-1]]; }
+      else if (act === 'down' && i < p.length - 1) { [p[i+1], p[i]] = [p[i], p[i+1]]; }
+      commitPalette(p);
+    }));
+    box.appendChild(row);
+  });
+}
+
+// --- wire up controls ---
+$('brightness').addEventListener('input', () => { $('brightness-val').textContent = $('brightness').value + '%'; });
+$('brightness').addEventListener('change', () => patch({brightness: +$('brightness').value}));
+$('display_on').addEventListener('change', () => patch({display_on: $('display_on').checked}));
+$('background_mode').addEventListener('change', () => patch({background_mode: $('background_mode').value}));
+$('breathing').addEventListener('change', () => patch({breathing: $('breathing').checked}));
+$('sparkle').addEventListener('change', () => patch({sparkle: $('sparkle').checked}));
+$('tod_tint').addEventListener('change', () => patch({tod_tint: $('tod_tint').checked}));
+document.querySelectorAll('input[name=time_format]').forEach(el =>
+  el.addEventListener('change', () => patch({time_format: el.value})));
+$('leading_zero').addEventListener('change', () => patch({leading_zero: $('leading_zero').checked}));
+$('colon_blink').addEventListener('change', () => patch({colon_blink: $('colon_blink').checked}));
+$('seconds_bar').addEventListener('change', () => patch({seconds_bar: $('seconds_bar').checked}));
+$('white_segments').addEventListener('change', () => patch({white_segments: $('white_segments').checked}));
+$('transition').addEventListener('change', () => patch({transition: $('transition').value}));
+$('transition_duration').addEventListener('input', () =>
+  { $('transition_duration-val').textContent = (+$('transition_duration').value).toFixed(1) + 's'; });
+$('transition_duration').addEventListener('change', () => patch({transition_duration: +$('transition_duration').value}));
+document.querySelectorAll('input[name=change_rate]').forEach(el =>
+  el.addEventListener('change', () => patch({change_rate: el.value})));
+$('color_order').addEventListener('change', () => patch({color_order: $('color_order').value}));
+$('fast').addEventListener('change', () => patch({fast: $('fast').checked}));
+$('add-color').addEventListener('click', () => commitPalette(settings.palette.concat(['#ffffff'])));
+$('next-color').addEventListener('click', () =>
+  api('/api/next-color', {method: 'POST'}).catch(() => note('Offline preview')));
+$('reset').addEventListener('click', async () => {
+  try {
+    const res = await api('/api/reset', {method: 'POST'});
+    settings = res.settings; applyToUI(settings); note('Reset');
+  } catch (e) {
+    settings = DEFAULTS; applyToUI(settings); note('Offline preview — showing defaults');
+  }
+});
+
+// --- live preview ---
+const canvas = $('preview');
+const ctx = canvas.getContext('2d');
+async function poll() {
+  try {
+    const [f, st] = await Promise.all([api('/api/frame'), api('/api/status')]);
+    if (canvas.width !== f.w || canvas.height !== f.h) { canvas.width = f.w; canvas.height = f.h; }
+    const img = ctx.createImageData(f.w, f.h);
+    for (let i = 0, j = 0; i < f.pixels.length; i += 3, j += 4) {
+      img.data[j] = f.pixels[i]; img.data[j+1] = f.pixels[i+1];
+      img.data[j+2] = f.pixels[i+2]; img.data[j+3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    $('st-left').textContent = `${st.time}  ·  ${st.color_hex}  (${st.color_index + 1}/${st.palette_size})`;
+    $('st-right').textContent = st.display_on ? 'running' : 'display off';
+  } catch (e) { /* ignore transient errors */ }
+}
+
+(async () => {
+  applyToUI(settings);                 // show built-in defaults right away
+  try {
+    settings = await api('/api/settings');
+    applyToUI(settings);               // overlay live settings when the backend answers
+  } catch (e) { /* static/offline preview: keep the defaults already shown */ }
+  poll();
+  setInterval(poll, 500);
+})();
+</script>
+</body>
+</html>
