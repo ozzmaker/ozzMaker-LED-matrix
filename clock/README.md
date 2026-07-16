@@ -1,3 +1,5 @@
+More information here https://ozzmaker.com/build-a-pixel-art-led-matrix-clock-3d-printed-diffuser-and-a-web-app/
+
 # Negative-style LED matrix clock
 
 A digital clock for **four OzzMaker 16×16 RGB LED panels** chained into one
